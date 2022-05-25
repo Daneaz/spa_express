@@ -4,3 +4,4 @@ log/
 *.launch.json
 .env
 .idea
+package-lock.json
