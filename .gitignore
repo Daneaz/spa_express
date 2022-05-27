@@ -5,3 +5,5 @@ log/
 .env
 .idea
 package-lock.json
+selfsigned.crt
+selfsigned.key
