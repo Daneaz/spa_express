@@ -7,12 +7,7 @@
 var app = require('../app');
 var debug = require('debug')('project-spa:server');
 var http = require('http');
-var fs = require('fs');
-var https = require('https');
 
-var privateKey = fs.readFileSync(__dirname + '/selfsigned.key');
-var certificate = fs.readFileSync(__dirname + '/selfsigned.crt');
-var credentials = {key: privateKey, cert: certificate};
 /**
  * Get port from environment and store in Express.
  */
@@ -25,15 +20,11 @@ app.set('port', port);
  */
 
 var server = http.createServer(app);
-var httpsServer = https.createServer(credentials, app);
-
 /**
  * Listen on provided port, on all network interfaces.
  */
 
 server.listen(port);
-httpsServer.listen(process.env.SSH_PORT);
-
 server.on('error', onError);
 server.on('listening', onListening);
 
