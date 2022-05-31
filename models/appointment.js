@@ -12,7 +12,8 @@ var AppointmentSchema = new Schema({
     ],
     client: { type: Schema.Types.ObjectId, ref: 'Client', required: true },
     checkout: { type: Boolean, default: false },
-    delFlag: { type: Boolean, index: true, default: false },
+    bookingDate: { type: Date },
+    delFlag: { type: Boolean, default: false },
 }, { timestamps: true });
 
 module.exports = mongoose.model('Appointment', AppointmentSchema);

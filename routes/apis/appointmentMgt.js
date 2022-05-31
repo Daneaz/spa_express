@@ -32,7 +32,7 @@ router.get('/appointment/:id', async (reqe, res, next) => {
 /* POST Create appointment. */
 router.post('/appointment', async (reqe, res, next) => {
     try {
-        // check rights 
+        // check rights
         let staff = await Staff.findById(res.locals.user.id).populate('role');
         if (!staff.role.appointmentMgt.create) { next(createError(403)); return; }
         //Create an empty appointment to get the id.
@@ -52,7 +52,7 @@ router.post('/appointment', async (reqe, res, next) => {
                     return booking._id
                 })
                 appointment.bookings = bookingids
-
+                appointment.bookingDate = bookings[0].start;
                 appointment.save()
                 let rsObj = { ok: "Appointment has been created.", bookings: bookings, appointmentId: appointment._id }
                 logger.audit("Appointment Mgt", "Create", bookings._id, staff.id, `A new appointment has been created by ${staff.displayName}`)
@@ -123,6 +123,7 @@ router.patch('/appointment/:id', async (reqe, res, next) => {
                         return booking._id
                     })
                     appointment.bookings = bookingIds
+                    appointment.bookingDate = newbookings[0].start;
                     appointment.save()
                     let rsObj = { ok: "Appointment has been created.", bookings: bookings, appointmentId: appointment._id }
                     logger.audit("Appointment Mgt", "Create", bookings._id, staff.id, `A new appointment has been created by ${staff.displayName}`)
@@ -252,7 +253,7 @@ router.post('/bookings', async (reqe, res, next) => {
         booking.createdBy = staff._id;
         booking.updatedBy = staff._id;
 
-        //save client 
+        //save client
         let doc = await booking.save();
         let rsObj = { ok: "Booking has been created.", booking: doc };
         logger.audit("Booking Mgt", "Create", doc._id, staff.id, `A new booking has been created by ${staff.displayName}`);
@@ -273,7 +274,7 @@ router.patch('/bookings/:id', async (reqe, res, next) => {
         let rawBooking = reqe.body;
 
         //load booking from db
-        let booking = await Booking.findOne({ "_id": reqe.params.id, "delFlag": false });
+        let booking = await Booking.findById({ _id: reqe.params.id, "delFlag": false });
 
         booking.updatedBy = staff._id;
         booking.title = rawBooking.title || booking.title;
@@ -283,7 +284,9 @@ router.patch('/bookings/:id', async (reqe, res, next) => {
         booking.client = rawBooking.client || booking.client;
         booking.service = rawBooking.service || booking.service;
 
-        //save booking 
+        await Appointment.findByIdAndUpdate(booking.appointment,{bookingDate: booking.start});
+
+        //save booking
         let doc = await booking.save();
         let rsObj = { ok: "Booking has been updated.", booking: doc };
         logger.audit("Booking Mgt", "Update", doc._id, staff.id, `Booking has been updated by ${staff.displayName}`);
@@ -306,7 +309,7 @@ router.delete('/bookings/:id', async (reqe, res, next) => {
         let booking = await Booking.findOne({ "_id": reqe.params.id });
         booking.updatedBy = staff._id;
         booking.delFlag = true;
-        // //save user 
+        // //save user
         let doc = await booking.save();
         let rsObj = {
             ok: "User has been deleted.",
