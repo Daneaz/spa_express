@@ -65,7 +65,7 @@ router.get('/dashboard', async (reqe, res, next) => {
             {
                 $group:
                     {
-                        _id: {$month: "$bookingDate"},
+                        _id: {$dateToString: {format: "%Y-%m-%d", date: "$bookingDate"}},
                         Missed: {$sum: 1},
                     }
             },
@@ -89,7 +89,7 @@ router.get('/dashboard', async (reqe, res, next) => {
             {
                 $group:
                     {
-                        _id: {$month: "$bookingDate"},
+                        _id: {$dateToString: {format: "%Y-%m-%d", date: "$bookingDate"}},
                         Completed: {$sum: 1},
                     }
             },
@@ -112,7 +112,7 @@ router.get('/dashboard', async (reqe, res, next) => {
             {
                 $group:
                     {
-                        _id: {$month: "$bookingDate"},
+                        _id: {$dateToString: {format: "%Y-%m-%d", date: "$bookingDate"}},
                         Total: {$sum: 1},
                     }
             },
@@ -128,8 +128,7 @@ router.get('/dashboard', async (reqe, res, next) => {
             bookingsByStaff[i].staff = bookingsByStaff[i].staffName[0]
         }
 
-        let appointments = mergeAppoinmentObj(totalAppointment, missedAppointment);
-        appointments = mergeAppoinmentObj(appointments, completedAppointment);
+        let appointments = mergeAppoinmentObj(totalAppointment, missedAppointment, completedAppointment);
 
         let rsObj = {ok: "Success.", bookingsByStaff: bookingsByStaff, appointments: appointments};
         res.json(rsObj);
@@ -140,27 +139,18 @@ router.get('/dashboard', async (reqe, res, next) => {
 
 });
 
-function mergeAppoinmentObj(arr1, arr2) {
-    let longerArr;
-    let shorterArr;
-    if (arr1.length === 0) {
-        return arr2;
-    } else if (arr2.length === 0) {
-        return arr1;
-    } else if (arr1.length > arr2.length) {
-        longerArr = arr1
-        shorterArr = arr2
-    } else {
-        longerArr = arr2
-        shorterArr = arr1
-    }
-    return longerArr.map((item, i) => {
-        if (shorterArr[i] && item.id === shorterArr[i].id) {
-            //merging two objects
-            return Object.assign({}, item, shorterArr[i])
-        } else {
-            return Object.assign({}, item)
+function mergeAppoinmentObj(totalAppointment, missedAppointment, completedAppointment) {
+
+    return totalAppointment.map(total => {
+        let miss = missedAppointment.find(miss => miss._id === total._id);
+        if (miss) {
+            total.Missed = miss.Missed;
         }
+        let complete = completedAppointment.find(complete => complete._id === total._id)
+        if (complete) {
+            total.Completed = complete.Completed
+        }
+        return total;
     })
 }
 
