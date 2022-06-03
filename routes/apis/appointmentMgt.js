@@ -123,7 +123,7 @@ router.patch('/appointment/:id', async (reqe, res, next) => {
                         return booking._id
                     })
                     appointment.bookings = bookingIds
-                    appointment.bookingDate = newbookings[0].start;
+                    appointment.bookingDate = bookings[0].start;
                     appointment.save()
                     let rsObj = { ok: "Appointment has been created.", bookings: bookings, appointmentId: appointment._id }
                     logger.audit("Appointment Mgt", "Create", bookings._id, staff.id, `A new appointment has been created by ${staff.displayName}`)
