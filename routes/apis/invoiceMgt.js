@@ -1,4 +1,3 @@
-
 var express = require('express');
 var router = express.Router();
 let createError = require('http-errors');
@@ -21,9 +20,9 @@ router.post('/useCredit/:id', async (reqe, res, next) => {
 
         let data = reqe.body;
 
-        Client.findOne({ "_id": reqe.params.id, "delFlag": false }).then(client => {
+        Client.findOne({"_id": reqe.params.id, "delFlag": false}).then(client => {
             if (client.credit < data.total) {
-                res.json({ error: "Not enought credit, Please top up!" });
+                res.json({error: "Not enought credit, Please top up!"});
             } else {
                 client.credit = client.credit - data.total;
                 client.save();
@@ -31,7 +30,7 @@ router.post('/useCredit/:id', async (reqe, res, next) => {
                 for (let i = 0; i < data.bookings.length; i++) {
                     servcies.push(data.bookings[i].service.name)
                 }
-                let record = new CreditRecord({ client: client._id, services: servcies, amount: data.total })
+                let record = new CreditRecord({client: client._id, services: servcies, amount: data.total})
                 record.save();
 
                 let mobile = client.mobile;
@@ -46,11 +45,11 @@ router.post('/useCredit/:id', async (reqe, res, next) => {
                 }).catch((error) => {
                     console.log(error);
                 });
-                res.json({ ok: "Please process to the waiting area!" });
+                res.json({ok: "Please process to the waiting area!"});
             }
         })
     } catch (err) {
-        res.status(400).json({ error: `Cannot use credit, ${err.message}` })
+        res.status(400).json({error: `Cannot use credit, ${err.message}`})
     }
 
 });
@@ -59,9 +58,12 @@ router.post('/useCredit/:id', async (reqe, res, next) => {
 router.get('/appointment/:id', async (reqe, res, next) => {
     try {
         let staff = await Staff.findById(res.locals.user.id).populate('role');
-        if (!staff.role.invoiceMgt.list) { next(createError(403)); return; }
+        if (!staff.role.invoiceMgt.list) {
+            next(createError(403));
+            return;
+        }
 
-        let appointment = await Appointment.findOne({ "_id": reqe.params.id, "delFlag": false })
+        let appointment = await Appointment.findOne({"_id": reqe.params.id, "delFlag": false})
             .populate({
                 path: "bookings",
                 populate: {
@@ -90,9 +92,12 @@ router.get('/appointment/:id', async (reqe, res, next) => {
 router.get('/appointmentToInvoice/:id', async (reqe, res, next) => {
     try {
         let staff = await Staff.findById(res.locals.user.id).populate('role');
-        if (!staff.role.invoiceMgt.list) { next(createError(403)); return; }
+        if (!staff.role.invoiceMgt.list) {
+            next(createError(403));
+            return;
+        }
 
-        let invoice = await Invoice.findOne({ appointment: reqe.params.id, delFlag: false })
+        let invoice = await Invoice.findOne({appointment: reqe.params.id, delFlag: false})
             .populate({
                 path: "appointment",
                 populate: {
@@ -123,10 +128,13 @@ router.get('/appointmentToInvoice/:id', async (reqe, res, next) => {
 router.get('/invoicelist', async (reqe, res, next) => {
     try {
         let staff = await Staff.findById(res.locals.user.id).populate('role');
-        if (!staff.role.invoiceMgt.list) { next(createError(403)); return; }
+        if (!staff.role.invoiceMgt.list) {
+            next(createError(403));
+            return;
+        }
 
-        let invoices = await Invoice.find({ "delFlag": false })
-            .populate("client")
+        let invoices = await Invoice.find({"delFlag": false})
+            .populate("client").sort({createdAt: -1})
         res.send(invoices);
     } catch (err) {
         res.status(400).json({
@@ -139,9 +147,12 @@ router.get('/invoicelist', async (reqe, res, next) => {
 router.get('/invoice/:id', async (reqe, res, next) => {
     try {
         let staff = await Staff.findById(res.locals.user.id).populate('role');
-        if (!staff.role.invoiceMgt.list) { next(createError(403)); return; }
+        if (!staff.role.invoiceMgt.list) {
+            next(createError(403));
+            return;
+        }
 
-        let invoice = await Invoice.findOne({ "_id": reqe.params.id, "delFlag": false })
+        let invoice = await Invoice.findOne({"_id": reqe.params.id, "delFlag": false})
             .populate({
                 path: "appointment",
                 populate: {
@@ -172,16 +183,19 @@ router.post('/invoice', async (reqe, res, next) => {
     try {
 
         let staff = await Staff.findById(res.locals.user.id).populate('role');
-        if (!staff.role.invoiceMgt.create) { next(createError(403)); return; }
+        if (!staff.role.invoiceMgt.create) {
+            next(createError(403));
+            return;
+        }
 
         let newInvoice = new Invoice(reqe.body);
         newInvoice.createdBy = staff._id;
         newInvoice.updatedBy = staff._id;
 
-        Appointment.findByIdAndUpdate(reqe.body.appointment, { checkout: true }, { new: true }).then(async result => {
+        Appointment.findByIdAndUpdate(reqe.body.appointment, {checkout: true}, {new: true}).then(async result => {
             if (result.checkout) {
                 let doc = await newInvoice.save();
-                let invoice = await Invoice.findOne({ "_id": doc._id, "delFlag": false })
+                let invoice = await Invoice.findOne({"_id": doc._id, "delFlag": false})
                     .populate({
                         path: "appointment",
                         populate: {
@@ -199,14 +213,14 @@ router.post('/invoice', async (reqe, res, next) => {
                             }
                         }
                     }).populate("client")
-                let rsObj = { ok: "Invoice has been created.", invoice: invoice };
+                let rsObj = {ok: "Invoice has been created.", invoice: invoice};
                 logger.audit("Invoice Mgt", "Create", invoice._id, staff.id, `A new invoice has been created by ${staff.displayName}`);
                 res.json(rsObj);
             }
         })
 
     } catch (err) {
-        res.status(400).json({ error: `Cannot create invoice, ${err.message}` })
+        res.status(400).json({error: `Cannot create invoice, ${err.message}`})
     }
 
 });
@@ -216,22 +230,25 @@ router.delete('/invoice', async (reqe, res, next) => {
     try {
 
         let user = await Staff.findById(res.locals.user.id).populate('role');
-        if (!user.role.invoiceMgt.delete) { next(createError(403)); return; }
+        if (!user.role.invoiceMgt.delete) {
+            next(createError(403));
+            return;
+        }
 
-        //save user 
+        //save user
         let deleteId = [];
-        let delObj = { updatedBy: user._id, delFlag: true };
+        let delObj = {updatedBy: user._id, delFlag: true};
         reqe.body.forEach(async function (deleteObj) {
-            let doc = await Invoice.findOneAndUpdate({ "_id": deleteObj._id, "delFlag": false }, delObj);
+            let doc = await Invoice.findOneAndUpdate({"_id": deleteObj._id, "delFlag": false}, delObj);
             deleteId.push(doc._id);
             logger.audit("Invoice Mgt", "Delete", doc._id, user.id, `Invoice has been deleted by ${user.displayName}`);
         });
 
-        let rsObj = { ok: "Invoices are deleted.", id: deleteId };
+        let rsObj = {ok: "Invoices are deleted.", id: deleteId};
         res.json(rsObj);
 
     } catch (err) {
-        res.status(400).json({ error: `Cannot delete Invoice, ${err.message}` })
+        res.status(400).json({error: `Cannot delete Invoice, ${err.message}`})
     }
 
 });
